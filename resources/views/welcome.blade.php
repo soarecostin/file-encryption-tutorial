@@ -85,7 +85,7 @@
                 </div>
 
                 <div class="links">
-                    <a href="https://medium.com/@soarecostin">Tutorial</a>
+                    <a href="https://medium.com/@soarecostin/how-to-encrypt-large-files-in-laravel-293460836ded?sk=976ab6e5d1cfb52e10c801fe0cb04fca">Tutorial</a>
                     <a href="https://github.com/soarecostin/file-vault">GitHub</a>
                 </div>
             </div>
