@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Jobs\EncryptFile;
+use App\Jobs\MoveFileToS3;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
@@ -26,9 +28,10 @@ class HomeController extends Controller
      */
     public function index()
     {
-        $files = Storage::files('files/' . auth()->user()->id);
+        $localFiles = Storage::files('files/' . auth()->user()->id);
+        $s3Files = Storage::disk('s3')->files('files/' . auth()->user()->id);
 
-        return view('home', compact('files'));
+        return view('home', compact('localFiles', 's3Files'));
     }
 
     /**
@@ -44,7 +47,9 @@ class HomeController extends Controller
 
             // check if we have a valid file uploaded
             if ($filename) {
-                FileVault::encrypt($filename);
+                EncryptFile::withChain([
+                    new MoveFileToS3($filename),
+                ])->dispatch($filename);
             }
         }
 
@@ -60,12 +65,12 @@ class HomeController extends Controller
     public function downloadFile($filename)
     {
         // Basic validation to check if the file exists and is in the user directory
-        if (!Storage::has('files/' . auth()->user()->id . '/' . $filename)) {
+        if (!Storage::disk('s3')->has('files/' . auth()->user()->id . '/' . $filename)) {
             abort(404);
         }
 
         return response()->streamDownload(function () use ($filename) {
-            FileVault::streamDecrypt('files/' . auth()->user()->id . '/' . $filename);
+            FileVault::disk('s3')->streamDecrypt('files/' . auth()->user()->id . '/' . $filename);
         }, Str::replaceLast('.enc', '', $filename));
     }
 
